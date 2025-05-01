@@ -1,0 +1,109 @@
+/* Custom styles for Frequência FJU */
+
+/* Adjust main container for mobile */
+@media (max-width: 576px) {
+  .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+/* Login card styling */
+.login-card {
+  max-width: 500px;
+  margin: 20px auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.app-title {
+  color: var(--bs-info);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Dashboard layout */
+.dashboard-card {
+  height: 100%;
+  margin-bottom: 20px;
+  transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+}
+
+.dashboard-card .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.dashboard-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--bs-info);
+}
+
+/* Names textarea */
+#names-list {
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* Attendance form */
+.attendance-form-container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Charts */
+.chart-container {
+  position: relative;
+  margin: 20px 0;
+  height: 400px;
+}
+
+/* Report styling */
+.report-header {
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+/* Navigation */
+.nav-link.active {
+  background-color: var(--bs-info) !important;
+  color: white !important;
+}
+
+/* Custom navbar title */
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+/* Utility classes */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Footer */
+.footer {
+  margin-top: 2rem;
+  padding: 1rem 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-icon {
+    font-size: 1.5rem;
+  }
+  
+  .chart-container {
+    height: 300px;
+  }
+}

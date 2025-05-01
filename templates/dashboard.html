@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Frequência FJU{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            {% if session.tribe %}
+            <span class="badge bg-info ms-2">{{ session.tribe }}</span>
+            {% endif %}
+        </h2>
+        <p class="text-muted">
+            Bem-vindo ao sistema de frequência da FJU. 
+            {% if session.role == 'Coordenador FJU' or session.role == 'Assistente FJU' or session.role == 'Auxiliar FJU' %}
+                Você tem acesso a todos os dados do sistema.
+            {% else %}
+                Você tem acesso aos dados da tribo {{ session.tribe }}.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-5">
+    <div class="col-12 mb-3">
+        <h4>Ações Rápidas</h4>
+    </div>
+    
+    <!-- Attendance Cards -->
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <div class="dashboard-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h5 class="card-title">Registrar Presença</h5>
+                <p class="card-text">Registre presenças nos eventos da FJU.</p>
+                <a href="{{ url_for('attendance') }}" class="btn btn-info stretched-link">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reports Card -->
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <div class="dashboard-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h5 class="card-title">Relatórios</h5>
+                <p class="card-text">Visualize e exporte relatórios de frequência.</p>
+                <a href="{{ url_for('reports') }}" class="btn btn-info stretched-link">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Entry Card -->
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <div class="dashboard-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h5 class="card-title">Registro Rápido</h5>
+                <p class="card-text">Registre rapidamente a presença para um evento específico.</p>
+                <div class="dropdown">
+                    <button class="btn btn-info dropdown-toggle stretched-link" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Selecionar Evento
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% for event in events %}
+                        <li><a class="dropdown-item" href="{{ url_for('attendance', event_type=event) }}">{{ event }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Overview -->
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Visão Geral de Frequência</h5>
+            </div>
+            <div class="card-body">
+                <div id="attendance-chart" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

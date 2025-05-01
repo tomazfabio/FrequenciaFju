@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Frequência FJU{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card login-card">
+            <div class="card-body">
+                <h1 class="app-title">
+                    <i class="fas fa-users me-2"></i>Frequência FJU
+                </h1>
+                
+                <p class="text-center mb-4">Sistema de controle de frequência da juventude</p>
+                
+                <form id="login-form" method="POST" action="{{ url_for('login') }}">
+                    <!-- Role selection -->
+                    <div class="mb-4">
+                        <label for="role" class="form-label">Selecione sua função:</label>
+                        <select class="form-select form-select-lg" id="role" name="role" required>
+                            <option value="" selected disabled>Escolha sua função</option>
+                            {% for role in roles %}
+                            <option value="{{ role }}">{{ role }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Tribe selection (conditionally shown) -->
+                    <div id="tribe-container" class="mb-4 d-none">
+                        <label for="tribe" class="form-label">Selecione sua tribo:</label>
+                        <select class="form-select form-select-lg" id="tribe" name="tribe">
+                            <option value="" selected disabled>Escolha sua tribo</option>
+                            {% for tribe in tribes %}
+                            <option value="{{ tribe }}">{{ tribe }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-primary btn-lg" type="submit">
+                            <i class="fas fa-sign-in-alt me-2"></i>Entrar no Sistema
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-muted text-center">
+                <small>Este sistema gerencia a frequência de jovens nos eventos da FJU</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Firebase configuration -->
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    
+    // Firebase configuration (injected from Flask)
+    const firebaseConfig = {
+        apiKey: "{{ firebase_api_key }}",
+        projectId: "{{ firebase_project_id }}",
+        appId: "{{ firebase_app_id }}",
+        authDomain: "{{ firebase_project_id }}.firebaseapp.com",
+        storageBucket: "{{ firebase_project_id }}.appspot.com",
+    };
+    
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    // Make Firebase available globally
+    window.firebaseApp = app;
+    window.firestoreDb = db;
+</script>
+{% endblock %}

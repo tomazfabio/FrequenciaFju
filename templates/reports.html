@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios - Frequência FJU{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="fas fa-chart-bar me-2"></i>Relatórios
+            {% if session.tribe %}
+            <span class="badge bg-info ms-2">{{ session.tribe }}</span>
+            {% endif %}
+        </h2>
+        <p class="text-muted">
+            Visualize e baixe relatórios de frequência.
+            {% if session.role == 'Coordenador da Tribo' or session.role == 'Assistente da Tribo' %}
+                Você está visualizando dados para a tribo {{ session.tribe }}.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs mb-4" id="reportTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab" aria-controls="stats" aria-selected="true">
+                    <i class="fas fa-chart-pie me-1"></i> Estatísticas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab" aria-controls="monthly" aria-selected="false">
+                    <i class="fas fa-calendar-alt me-1"></i> Relatório Mensal
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Alert container for form messages -->
+        <div id="alert-container"></div>
+        
+        <!-- Tab content -->
+        <div class="tab-content">
+            <!-- Statistics tab -->
+            <div class="tab-pane fade show active" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                <div id="stats-container">
+                    <!-- Stats will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Monthly report tab -->
+            <div class="tab-pane fade" id="monthly" role="tabpanel" aria-labelledby="monthly-tab">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Gerar Relatório Mensal</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="month-select" class="form-label">Mês:</label>
+                                <select class="form-select" id="month-select">
+                                    <option value="1">Janeiro</option>
+                                    <option value="2">Fevereiro</option>
+                                    <option value="3">Março</option>
+                                    <option value="4">Abril</option>
+                                    <option value="5">Maio</option>
+                                    <option value="6">Junho</option>
+                                    <option value="7">Julho</option>
+                                    <option value="8">Agosto</option>
+                                    <option value="9">Setembro</option>
+                                    <option value="10">Outubro</option>
+                                    <option value="11">Novembro</option>
+                                    <option value="12">Dezembro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="year-select" class="form-label">Ano:</label>
+                                <select class="form-select" id="year-select">
+                                    <!-- Years will be dynamically populated -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button id="generate-report-btn" class="btn btn-primary">
+                                <i class="fas fa-sync me-1"></i> Gerar Relatório
+                            </button>
+                            <button id="download-report-btn" class="btn btn-info d-none">
+                                <i class="fas fa-download me-1"></i> Baixar Relatório (.txt)
+                            </button>
+                        </div>
+                        
+                        <div id="report-results" class="mt-4">
+                            <!-- Report results will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}
