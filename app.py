@@ -3,8 +3,6 @@ import json
 import logging
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-import firebase_admin
-from firebase_admin import credentials, firestore
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -13,33 +11,13 @@ app.secret_key = os.environ.get("SESSION_SECRET", "frequencia-fju-secret-key")
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Initialize Firebase
-try:
-    # For production, use environment variables
-    firebase_project_id = os.environ.get("FIREBASE_PROJECT_ID", "frequencia-fju")
-    firebase_api_key = os.environ.get("FIREBASE_API_KEY", "your-api-key")
-    firebase_app_id = os.environ.get("FIREBASE_APP_ID", "your-app-id")
-    
-    # Initialize Firebase Admin SDK
-    if not firebase_admin._apps:
-        # Create a JSON file with the service account credentials
-        service_account_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
-        if service_account_json:
-            service_account_file = "firebase-credentials.json"
-            with open(service_account_file, "w") as f:
-                f.write(service_account_json)
-            cred = credentials.Certificate(service_account_file)
-            firebase_admin.initialize_app(cred)
-        else:
-            logging.error("Firebase service account not provided.")
-            cred = None
-    
-    # Get Firestore client
-    db = firestore.client()
-    
-except Exception as e:
-    logging.error(f"Firebase initialization error: {e}")
-    db = None
+# For production, use environment variables
+firebase_project_id = os.environ.get("FIREBASE_PROJECT_ID", "frequencia-fju")
+firebase_api_key = os.environ.get("FIREBASE_API_KEY", "your-api-key")
+firebase_app_id = os.environ.get("FIREBASE_APP_ID", "your-app-id")
+
+# Initialize a simple in-memory database for development purposes
+attendance_db = []
 
 # Configuration
 from config import ROLES, TRIBES, EVENTS
@@ -124,8 +102,8 @@ def reports():
 
 @app.route('/api/attendance', methods=['POST'])
 def save_attendance():
-    if not session.get('logged_in') or not db:
-        return jsonify({'success': False, 'error': 'Unauthorized or database not available'}), 401
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
     data = request.json
     names = data.get('names', [])
@@ -143,81 +121,75 @@ def save_attendance():
         return jsonify({'success': False, 'error': 'Unauthorized to add attendance for this tribe'}), 403
     
     # Process each name
-    batch = db.batch()
     records_count = 0
+    selected_tribe = data.get('tribe', tribe)
     
     for name in names:
         if not name.strip():
             continue
         
-        # Create attendance record
-        attendance_ref = db.collection('attendance').document()
+        # Create attendance record with a unique ID
+        import uuid
+        record_id = str(uuid.uuid4())
+        
         attendance_data = {
+            'id': record_id,
             'name': name.strip(),
             'event': event_type,
             'date': date,
-            'tribe': data.get('tribe', tribe),
+            'tribe': selected_tribe,
             'registered_by_role': role,
-            'timestamp': firestore.SERVER_TIMESTAMP
+            'timestamp': datetime.now().isoformat()
         }
         
-        batch.set(attendance_ref, attendance_data)
+        attendance_db.append(attendance_data)
         records_count += 1
     
-    # Commit batch if there are records
+    # Return success response if there are records
     if records_count > 0:
-        batch.commit()
         return jsonify({'success': True, 'records': records_count}), 200
     else:
         return jsonify({'success': False, 'error': 'No valid names provided'}), 400
 
 @app.route('/api/attendance', methods=['GET'])
 def get_attendance():
-    if not session.get('logged_in') or not db:
-        return jsonify({'success': False, 'error': 'Unauthorized or database not available'}), 401
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
     role = session.get('role')
     tribe = session.get('tribe')
     
-    # Create query based on role permissions
-    query = db.collection('attendance')
-    
-    # Filter by tribe for tribe-specific roles
-    if role in ['Coordenador da Tribo', 'Assistente da Tribo'] and tribe:
-        query = query.where('tribe', '==', tribe)
-    
-    # Apply additional filters if provided
-    event_type = request.args.get('event_type')
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    
-    if event_type:
-        query = query.where('event', '==', event_type)
-    
-    if start_date:
-        query = query.where('date', '>=', start_date)
-    
-    if end_date:
-        query = query.where('date', '<=', end_date)
-    
-    # Execute query
+    # Apply filters based on role permissions
     results = []
-    try:
-        docs = query.get()
-        for doc in docs:
-            data = doc.to_dict()
-            data['id'] = doc.id
-            results.append(data)
+    
+    for record in attendance_db:
+        # Filter by tribe for tribe-specific roles
+        if role in ['Coordenador da Tribo', 'Assistente da Tribo'] and tribe and record.get('tribe') != tribe:
+            continue
         
-        return jsonify({'success': True, 'data': results}), 200
-    except Exception as e:
-        logging.error(f"Error fetching attendance: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        # Apply additional filters if provided
+        event_type = request.args.get('event_type')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        if event_type and record.get('event') != event_type:
+            continue
+        
+        if start_date and record.get('date') < start_date:
+            continue
+        
+        if end_date and record.get('date') > end_date:
+            continue
+        
+        # Add record to results
+        results.append(record)
+    
+    return jsonify({'success': True, 'data': results}), 200
 
 @app.route('/api/attendance/monthly-report', methods=['GET'])
 def get_monthly_report():
-    if not session.get('logged_in') or not db:
-        return jsonify({'success': False, 'error': 'Unauthorized or database not available'}), 401
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
     month = request.args.get('month')
     year = request.args.get('year')
@@ -234,72 +206,61 @@ def get_monthly_report():
     else:
         end_date = f"{year}-{str(int(month)+1).zfill(2)}-01"
     
-    # Create the query
+    # Apply filters
     role = session.get('role')
     tribe = session.get('tribe')
     
-    query = db.collection('attendance')
-    
-    # Filter by tribe for tribe-specific roles
-    if role in ['Coordenador da Tribo', 'Assistente da Tribo'] and tribe:
-        query = query.where('tribe', '==', tribe)
-    
-    # Date range
-    query = query.where('date', '>=', start_date).where('date', '<', end_date)
-    
-    # Execute query
+    # Filter records for the selected month
     report_data = []
-    try:
-        docs = query.get()
-        for doc in docs:
-            data = doc.to_dict()
-            data['id'] = doc.id
-            report_data.append(data)
+    
+    for record in attendance_db:
+        # Only include records from the selected month
+        if record.get('date') < start_date or record.get('date') >= end_date:
+            continue
+            
+        # Filter by tribe for tribe-specific roles
+        if role in ['Coordenador da Tribo', 'Assistente da Tribo'] and tribe and record.get('tribe') != tribe:
+            continue
         
-        return jsonify({'success': True, 'data': report_data}), 200
-    except Exception as e:
-        logging.error(f"Error generating monthly report: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        # Add record to report
+        report_data.append(record)
+    
+    return jsonify({'success': True, 'data': report_data}), 200
 
 @app.route('/api/attendance/stats', methods=['GET'])
 def get_attendance_stats():
-    if not session.get('logged_in') or not db:
-        return jsonify({'success': False, 'error': 'Unauthorized or database not available'}), 401
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
     try:
-        # Create the query based on role permissions
+        # Get filters
         role = session.get('role')
         tribe = session.get('tribe')
-        
-        query = db.collection('attendance')
-        
-        # Filter by tribe for tribe-specific roles
-        if role in ['Coordenador da Tribo', 'Assistente da Tribo'] and tribe:
-            query = query.where('tribe', '==', tribe)
-        
-        # Optional parameters
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
-        
-        if start_date:
-            query = query.where('date', '>=', start_date)
-        
-        if end_date:
-            query = query.where('date', '<=', end_date)
-        
-        # Execute query
-        docs = query.get()
         
         # Process data for charts
         attendance_by_event = {}
         attendance_by_youth = {}
         attendance_by_tribe = {}
         
-        for doc in docs:
-            data = doc.to_dict()
-            event = data.get('event', 'Unknown')
-            name = data.get('name', 'Unknown')
-            doc_tribe = data.get('tribe', 'Unknown')
+        # Filter and process records
+        for record in attendance_db:
+            # Apply tribe filter for tribe-specific roles
+            if role in ['Coordenador da Tribo', 'Assistente da Tribo'] and tribe and record.get('tribe') != tribe:
+                continue
+            
+            # Apply date filters if provided
+            if start_date and record.get('date') < start_date:
+                continue
+                
+            if end_date and record.get('date') > end_date:
+                continue
+            
+            # Extract data
+            event = record.get('event', 'Unknown')
+            name = record.get('name', 'Unknown')
+            record_tribe = record.get('tribe', 'Unknown')
             
             # Count by event
             if event in attendance_by_event:
@@ -314,10 +275,10 @@ def get_attendance_stats():
                 attendance_by_youth[name] = 1
             
             # Count by tribe
-            if doc_tribe in attendance_by_tribe:
-                attendance_by_tribe[doc_tribe] += 1
+            if record_tribe in attendance_by_tribe:
+                attendance_by_tribe[record_tribe] += 1
             else:
-                attendance_by_tribe[doc_tribe] = 1
+                attendance_by_tribe[record_tribe] = 1
         
         # Sort youth by attendance (descending)
         sorted_youth = sorted(attendance_by_youth.items(), key=lambda x: x[1], reverse=True)
