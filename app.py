@@ -1,8 +1,16 @@
 import os
 import json
 import logging
+import uuid
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+
+try:
+    from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+except ImportError:
+    # In case the import fails, try to reinstall Flask
+    logging.error("Flask import failed. Make sure Flask is installed.")
+    import sys
+    sys.exit(1)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -80,13 +88,16 @@ def attendance():
         return redirect(url_for('index'))
     
     event_type = request.args.get('event_type', EVENTS[0])
+    today_date = datetime.now().strftime('%Y-%m-%d')
     
     return render_template(
         'attendance.html',
         role=session.get('role'),
         tribe=session.get('tribe'),
         events=EVENTS,
-        selected_event=event_type
+        tribes=TRIBES,
+        selected_event=event_type,
+        today_date=today_date
     )
 
 @app.route('/reports')
