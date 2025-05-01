@@ -19,7 +19,8 @@ TRIBES = [
     'Aser',
     'Issacar',
     'Zebulom',
-    'José',
+    'Efraim',
+    'Manassés',
     'Benjamim'
 ]
 
