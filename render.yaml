@@ -1,0 +1,11 @@
+services:
+  # Um serviço web para nossa aplicação Flask
+  - type: web
+    name: frequencia-fju
+    env: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn main:app
+    envVars:
+      - key: SESSION_SECRET
+        generateValue: true # Gerar um valor aleatório na implantação
+    plan: free
